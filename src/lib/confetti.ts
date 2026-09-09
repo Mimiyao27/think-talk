@@ -2,9 +2,6 @@ export function triggerConfetti() {
   if (typeof window === 'undefined') return;
 
   const count = 70;
-  const defaults = {
-    origin: { y: 0.7 }
-  };
 
   const canvas = document.createElement('canvas');
   canvas.style.position = 'fixed';

@@ -36,4 +36,13 @@ export interface EvaluationResult {
   rawTranscript: string;
   missingBlanksCount: number;
   totalBlanksCount: number;
+  userAudioUrl?: string;
+}
+
+export interface SpeechRecordingResult {
+  transcript: string;
+  audioBlob: Blob | null;
+  audioUrl: string | null;
+  audioBase64: string | null;
+  mimeType: string;
 }

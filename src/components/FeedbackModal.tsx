@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { EvaluationResult, PracticeTemplate } from '@/types';
 import { CancelCrossIcon, VolumeUpIcon, SparklesIcon, RefreshCwIcon } from './Icons';
 import { speakText, stopSpeaking } from '@/lib/speechSynthesis';
@@ -13,11 +13,11 @@ interface FeedbackModalProps {
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({
   evaluation,
-  template,
   onClose,
 }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [activeTab, setActiveTab] = useState<'main' | 'breakdown'>('main');
+  const [isPlayingUserAudio, setIsPlayingUserAudio] = useState(false);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     // Play celebratory sound & confetti on positive evaluation
@@ -27,24 +27,61 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     }
 
     // Auto-speak feedback after a short delay
-    const cancelSpeak = speakText(evaluation.feedbackMessage, () => {
-      setIsSpeaking(false);
-    });
-    setIsSpeaking(true);
+    const timer = setTimeout(() => {
+      setIsSpeaking(true);
+      speakText(evaluation.feedbackMessage, () => {
+        setIsSpeaking(false);
+      });
+    }, 150);
 
     return () => {
-      cancelSpeak();
+      clearTimeout(timer);
       stopSpeaking();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+      }
     };
   }, [evaluation]);
 
   const handleToggleSpeak = () => {
+    if (isPlayingUserAudio && audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      setIsPlayingUserAudio(false);
+    }
+
     if (isSpeaking) {
       stopSpeaking();
       setIsSpeaking(false);
     } else {
       setIsSpeaking(true);
       speakText(evaluation.feedbackMessage, () => setIsSpeaking(false));
+    }
+  };
+
+  const handleToggleUserAudio = () => {
+    if (isSpeaking) {
+      stopSpeaking();
+      setIsSpeaking(false);
+    }
+
+    if (!audioPlayerRef.current && evaluation.userAudioUrl) {
+      const audio = new Audio(evaluation.userAudioUrl);
+      audio.onended = () => setIsPlayingUserAudio(false);
+      audio.onerror = () => setIsPlayingUserAudio(false);
+      audioPlayerRef.current = audio;
+    }
+
+    if (audioPlayerRef.current) {
+      if (isPlayingUserAudio) {
+        audioPlayerRef.current.pause();
+        setIsPlayingUserAudio(false);
+      } else {
+        audioPlayerRef.current.currentTime = 0;
+        audioPlayerRef.current
+          .play()
+          .then(() => setIsPlayingUserAudio(true))
+          .catch(() => setIsPlayingUserAudio(false));
+      }
     }
   };
 
@@ -57,12 +94,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
     >
       {/* Container matching Image 3 */}
       <div className="relative w-full max-w-2xl sm:max-w-3xl">
-        
         {/* RED CLOSE "X" CIRCLE BUTTON AT TOP-RIGHT OVERLAPPING CORNER */}
         <button
           onClick={() => {
             sounds.playClick();
             stopSpeaking();
+            if (audioPlayerRef.current) audioPlayerRef.current.pause();
             onClose();
           }}
           id="close-feedback-btn"
@@ -74,7 +111,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
 
         {/* MAIN YELLOWISH/CREAM FEEDBACK CARD (IMAGE 3) */}
         <div className="relative w-full rounded-[28px] border-[3.5px] border-black bg-[#faedb7] p-8 sm:p-12 md:p-14 shadow-[0_12px_0_#1a1a1a] transition-all overflow-hidden">
-          
           {/* Header Title */}
           <div className="text-center mb-6 sm:mb-8">
             <h2
@@ -93,22 +129,38 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
             </p>
           </div>
 
-          {/* Spoken Transcript pill & Audio Playback button */}
+          {/* Spoken Transcript pill & Audio Playback buttons */}
           <div className="mt-8 pt-6 border-t-2 border-black/15 flex flex-col sm:flex-row items-center justify-between gap-4">
-            
-            {/* Audio Voice button */}
-            <button
-              onClick={handleToggleSpeak}
-              id="speak-feedback-btn"
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black font-bold text-sm transition-all cursor-pointer ${
-                isSpeaking
-                  ? 'bg-blue-600 text-white shadow-md animate-pulse'
-                  : 'bg-white/80 text-zinc-900 hover:bg-white shadow-sm'
-              }`}
-            >
-              <VolumeUpIcon className="w-5 h-5" />
-              <span>{isSpeaking ? 'Speaking...' : 'Listen to AI Tutor'}</span>
-            </button>
+            {/* Audio Voice buttons */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={handleToggleSpeak}
+                id="speak-feedback-btn"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                  isSpeaking
+                    ? 'bg-blue-600 text-white shadow-md animate-pulse'
+                    : 'bg-white/80 text-zinc-900 hover:bg-white shadow-sm'
+                }`}
+              >
+                <VolumeUpIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>{isSpeaking ? 'Speaking...' : 'Listen to AI Tutor'}</span>
+              </button>
+
+              {evaluation.userAudioUrl && (
+                <button
+                  onClick={handleToggleUserAudio}
+                  id="play-user-recording-btn"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full border-2 border-black font-bold text-xs sm:text-sm transition-all cursor-pointer ${
+                    isPlayingUserAudio
+                      ? 'bg-emerald-600 text-white shadow-md animate-pulse'
+                      : 'bg-white/80 text-zinc-900 hover:bg-white shadow-sm'
+                  }`}
+                >
+                  <span className="text-sm">🎤</span>
+                  <span>{isPlayingUserAudio ? 'Playing...' : 'Play Your Voice'}</span>
+                </button>
+              )}
+            </div>
 
             {/* Score & Fluency Badges */}
             <div className="flex items-center gap-3">
@@ -120,10 +172,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
                 Fluency: {evaluation.fluencyScore}%
               </span>
             </div>
-
           </div>
 
-          {/* Transcript Details / Breakdown toggle */}
+          {/* Transcript Details */}
           {evaluation.rawTranscript && (
             <div className="mt-4 bg-white/60 rounded-2xl p-4 border border-black/15">
               <div className="text-xs font-bold text-zinc-600 uppercase tracking-wider mb-1">
@@ -141,6 +192,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               onClick={() => {
                 sounds.playClick();
                 stopSpeaking();
+                if (audioPlayerRef.current) audioPlayerRef.current.pause();
                 onClose();
               }}
               id="try-again-btn"
@@ -150,7 +202,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({
               Practice Again
             </button>
           </div>
-
         </div>
       </div>
     </div>

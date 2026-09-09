@@ -1,7 +1,6 @@
 import React from 'react';
 import { PracticeTemplate } from '@/types';
 import { PRACTICE_TEMPLATES } from '@/lib/templates';
-import { SparklesIcon } from './Icons';
 
 interface HeaderProps {
   selectedTemplate: PracticeTemplate;

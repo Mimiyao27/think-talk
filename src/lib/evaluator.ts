@@ -31,7 +31,7 @@ export function evaluateSpeechTranscript(
   
   // Specific handler for Self Introduction template
   if (template.id === 'self-intro') {
-    return evaluateSelfIntro(cleanTranscript, lower, template);
+    return evaluateSelfIntro(cleanTranscript, lower);
   }
 
   // Generic fallback evaluator for any other template
@@ -40,8 +40,7 @@ export function evaluateSpeechTranscript(
 
 function evaluateSelfIntro(
   rawTranscript: string,
-  lower: string,
-  template: PracticeTemplate
+  lower: string
 ): EvaluationResult {
   const blanks: FilledBlank[] = [];
 

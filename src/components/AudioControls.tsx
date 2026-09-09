@@ -20,13 +20,13 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
   const isRecording = appState === 'recording';
   const isProcessing = appState === 'processing';
 
-  // Dynamic bar heights for the visualizer
+  // Dynamic bar heights for the visualizer calculated deterministically from volumeLevel
   const barHeights = [
-    Math.max(12, Math.min(36, 12 + volumeLevel * 30 + Math.sin(Date.now() / 150) * 8)),
-    Math.max(16, Math.min(46, 16 + volumeLevel * 45 + Math.cos(Date.now() / 120) * 12)),
-    Math.max(22, Math.min(54, 22 + volumeLevel * 60 + Math.sin(Date.now() / 100) * 16)),
-    Math.max(16, Math.min(46, 16 + volumeLevel * 45 + Math.cos(Date.now() / 130) * 12)),
-    Math.max(12, Math.min(36, 12 + volumeLevel * 30 + Math.sin(Date.now() / 160) * 8)),
+    Math.max(12, Math.min(36, 12 + volumeLevel * 24)),
+    Math.max(16, Math.min(46, 16 + volumeLevel * 30)),
+    Math.max(22, Math.min(54, 22 + volumeLevel * 32)),
+    Math.max(16, Math.min(46, 16 + volumeLevel * 30)),
+    Math.max(12, Math.min(36, 12 + volumeLevel * 24)),
   ];
 
   if (!isRecording && !isProcessing) {
@@ -80,13 +80,28 @@ export const AudioControls: React.FC<AudioControlsProps> = ({
             aria-label="Recording in progress"
             className="relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#38bdf8] text-white shadow-[0_8px_20px_rgba(56,189,248,0.45)] ring-4 ring-[#38bdf8]/40 animate-pulse"
           >
-            {/* Animated Sound Waveform Bars */}
+            {/* Animated Sound Waveform Bars with dynamic volume response */}
             <div className="flex items-center justify-center gap-1.5 h-12">
-              <span className="w-1.5 bg-white rounded-full animate-wave-1 h-4 sm:h-5" />
-              <span className="w-1.5 bg-white rounded-full animate-wave-2 h-7 sm:h-8" />
-              <span className="w-1.5 bg-white rounded-full animate-wave-3 h-10 sm:h-11" />
-              <span className="w-1.5 bg-white rounded-full animate-wave-2 h-7 sm:h-8" />
-              <span className="w-1.5 bg-white rounded-full animate-wave-1 h-4 sm:h-5" />
+              <span
+                style={{ height: `${barHeights[0]}px` }}
+                className="w-1.5 bg-white rounded-full transition-all duration-75"
+              />
+              <span
+                style={{ height: `${barHeights[1]}px` }}
+                className="w-1.5 bg-white rounded-full transition-all duration-75"
+              />
+              <span
+                style={{ height: `${barHeights[2]}px` }}
+                className="w-1.5 bg-white rounded-full transition-all duration-75"
+              />
+              <span
+                style={{ height: `${barHeights[3]}px` }}
+                className="w-1.5 bg-white rounded-full transition-all duration-75"
+              />
+              <span
+                style={{ height: `${barHeights[4]}px` }}
+                className="w-1.5 bg-white rounded-full transition-all duration-75"
+              />
             </div>
           </div>
           <span className="mt-4 text-xs sm:text-sm font-extrabold tracking-wider text-black uppercase select-none animate-pulse">
